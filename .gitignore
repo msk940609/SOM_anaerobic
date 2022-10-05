@@ -45,6 +45,11 @@ Figure/
 #ignore datafile
 Datafile/
 
+
+#ignore transformation
+Transformation*/
+
+
 #ignore example figure
 *.tiff
 *.png

@@ -1,3 +1,4 @@
+
 library(vegan)
 library(ggplot2)
 library("openxlsx")
@@ -21,6 +22,9 @@ library(writexl)
 library(openxlsx)
 library(tools)
 library(lemon)
+
+
+source("Rscript/func_filename.R")
 
 
 som=fread("Datafile/SOM_1st.csv")
@@ -313,6 +317,9 @@ ggplot(som_mole_temp25_sel,aes(x=as.factor(Date), y=rel, fill=Type))+
         legend.justification=c(0.4, 0.5),
         legend.position = c(0.16,0.95))+
   ggsave(filename("mole_bar_25"),height = 15, width = 60, units = "cm", dpi = 300)
+
+
+
 
 
 
