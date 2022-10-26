@@ -21,19 +21,31 @@ library(writexl)
 library(openxlsx)
 library(tools)
 library(extrafont)
+library(remotes)
+library(ggrepel)
 loadfonts(device="win")
-
 
 source("Rscript/func_filename.R")
 #fwrite(som_all,file = "Datafile/SOM_1st.csv")
 
 ##Data analysis=====
 som_1st=fread("Datafile/SOM_1st.csv")
+som_1st$Freq=1
 
+som_1st
+
+som_fm=aggregate(som_1st$Freq, by=list(Type=som_1st$Type,Incubation=som_1st$Incubation, Temp=som_1st$Temp, Formula=som_1st$Formula),sum)
+som_fm
+
+
+som_1st=som_1st %>% inner_join(som_fm)
+length(unique(som_1st$Formula))
+som_1st_sel=subset(som_1st,som_1st$x>1)
+length(unique(som_1st_sel$Formula))
 
 table(som_1st$Sample)
 #Molecular class====
-ft_data=som_1st
+ft_data=som_1st_sel
 ft_data$lipid=ifelse(ft_data$`O/C`>=0&ft_data$`O/C`<0.3,
                      ifelse(ft_data$`H/C`>1.5&ft_data$`H/C`<2.0, "Lipids",""),"")
 ft_data$protein=ifelse(ft_data$`O/C`>=0.3&ft_data$`O/C`<=0.67,
@@ -133,45 +145,6 @@ ggnmds$id=factor(ggnmds$id, levels = c("D70_5 (°C)","D70_15 (°C)","D70_25 (°C
 
 ggnmds
 
-#ggnmds=ggnmds[order(ggnmds$id,decreasing=T),]
-ggplot(ggnmds, aes(x=MDS1,y=MDS2,shape=Type, fill=id))+
-  geom_point(size=7)+
-  scale_fill_manual(values = c("#E4AEC5","#E04DB0","#F14668",
-                               "#FFBC80","#F76E11","#C36839",
-                                "#B1E693","#4E9F3D","#085E7D",
-                                "#90E0EF","#00B4D8","#113CFC",
-                                "black"))+
-  scale_shape_manual(values=c(24,21))+
-  scale_x_continuous(name = "NMDS1",limits = c(-1.0,2))+
-  scale_y_continuous(name = "NMDS2",limits = c(-0.65,0.75))+
-  theme_bw()+
-  theme(panel.grid = element_blank(),
-        panel.border = element_rect(size = 2),
-        axis.ticks = element_line(size = 1, color = "black"),
-        axis.ticks.length = unit(0.15, "cm"),
-        axis.text.x = element_text(size = 22, colour = "black",face = "bold", family = "Arial"),
-        axis.text.y = element_text(size = 22, colour = "black",face = "bold", family = "Arial"),
-        axis.title.x = element_text(size = 25, colour = "black",face = "bold", family = "Arial",margin = unit(c(0.5,0,0.0,0),"cm")),
-        axis.title.y = element_text(size = 25, colour = "black",face = "bold", family = "Arial",margin = unit(c(0.0,0.2,0.0,0.0),"cm")),
-        legend.text = element_text(size = 12, colour = "black", family = "Arial",vjust = 0.5, margin = unit(c(-0.2,0,-0.2,0),"cm")),
-        legend.title = element_text(size = 16, colour = "black", family = "Arial", face = "bold"),
-        legend.spacing = unit(1.4,"cm"),
-        legend.position = c(0.50, 0.92),
-        legend.direction = "vertical",
-        legend.box = "horizontal",
-        legend.background = element_blank()
-  )+
-  guides(shape=guide_legend(title = "Type",title.position = "top",order = 1, override.aes = list(shape=c(23,21),fill=c("grey50","grey50") )),
-         fill=guide_legend(title = "Day&temperature (°C)",title.position = "top",order = 2,
-                           override.aes = list(shape=21,
-                                               fill=c("#E4AEC5","#E04DB0","#F14668",
-                                                      "#FFBC80","#F76E11","#C36839",
-                                                      "#B1E693","#4E9F3D","#085E7D",
-                                                      "#90E0EF","#00B4D8","#113CFC",
-                                                      "black")),nrow = 3))+
-  ggsave(filename("NMDS_all"),height = 25, width = 25, units = "cm", dpi = 300)
-
-
 ggplot(ggnmds, aes(x=MDS1,y=MDS2,shape=Type, col=Temp))+
   geom_point(size=7)+
   scale_shape_manual(values=c(18,16))+
@@ -256,29 +229,50 @@ vec.pcoa <- pc$vectors[ ,1:2]
 var.pcoa <- round(pc$values$Relative_eig[1:2],3)
 var.pcoa
 
-
 plot(pc$vectors)
-
 pal_time <- c("#E4AEC5","#E04DB0","#F14668",
   "#FFBC80","#F76E11","#C36839",
   "#B1E693","#4E9F3D","#085E7D",
   "#90E0EF","#00B4D8","#113CFC",
   "black")
-
 pal_temp <- c("#D4F1F4","#ECF87F","#FABEC0",
               "#75E6DA","#B1D8B7","#F37970",
               "#189AB4","#81B622","#DE0001",
               "#0D5F8A","#3D550C","#821D30",
               "black")
 
-fwrite(ggpcoa,file = "tt.csv")
+ggpcoa$Typelab=factor(ggpcoa$Type, levels = c("AL","PF"),
+                      labels = c("Active layer","Permafrost"))
 
-ggplot(ggpcoa, aes(x=V1,y=V2,shape=Type, fill=id))+
-  geom_point(size=7)+
-  scale_fill_manual(values = pal_time)+
+ggpcoa$Templab=as.factor(ggpcoa$Temp)
+ggpcoa$Templab=ifelse(ggpcoa$Templab=="Ctrl","Before incubation",as.character(ggpcoa$Temp))
+table(ggpcoa$Templab)
+ggpcoa$Templab=factor(ggpcoa$Templab, levels = c("Before incubation","5 (°C)","15 (°C)","25 (°C)"),
+                      labels = c("Before incubation","5°C","15°C","25°C"))
+
+ggpcoa$id=paste(ggpcoa$Type,ggpcoa$Temp,ggpcoa$Incubation, sep = "_")
+
+
+?stat_ellipse
+
+
+#install.packages("factoextra")
+#install.packages("ggforce")
+
+library(factoextra)
+library(ggforce)
+
+ggplot(ggpcoa)+
+  geom_point(aes(x=V1,y=V2,shape=Typelab, fill=Templab,col=Templab),size=7)+
+  #stat_ellipse(aes(x=V1,y=V2,group=id),level = 0.75)+
+  #ggforce::geom_mark_ellipse(aes(x=V1,y=V2,group = id),expand = unit(1, "mm"))+
+  geom_text_repel(aes(x=V1,y=V2,label=Incubation), col="black")+
+  #scale_fill_manual(values = pal_time)+
+  scale_fill_manual(values = c("Black","blue","green","red"))+
+  scale_color_manual(values = c("Black","blue","green","red"))+
   scale_shape_manual(values=c(24,21))+
-  scale_x_continuous(name = "PCoA1 (45.3%)",limits = c(-0.5,0.55))+
-  scale_y_continuous(name = "PCoA2 (32.5%)",limits = c(-0.35,0.45))+
+  scale_x_continuous(name = "PCoA1 (45.9%)",limits = c(-0.3,0.55))+
+  scale_y_continuous(name = "PCoA2 (33.0%)",limits = c(-0.35,0.35))+
   theme_bw()+
   theme(panel.grid = element_blank(),
         panel.border = element_rect(size = 2),
@@ -288,73 +282,19 @@ ggplot(ggpcoa, aes(x=V1,y=V2,shape=Type, fill=id))+
         axis.text.y = element_text(size = 22, colour = "black",face = "bold", family = "Arial"),
         axis.title.x = element_text(size = 25, colour = "black",face = "bold", family = "Arial",margin = unit(c(0.5,0,0.0,0),"cm")),
         axis.title.y = element_text(size = 25, colour = "black",face = "bold", family = "Arial",margin = unit(c(0.0,0.2,0.0,0.0),"cm")),
-        legend.text = element_text(size = 12, colour = "black", family = "Arial",vjust = 0.5, margin = unit(c(-0.2,0,-0.2,0),"cm")),
-        legend.title = element_text(size = 16, colour = "black", family = "Arial", face = "bold"),
-        legend.spacing = unit(1.4,"cm"),
-        legend.position = c(0.50, 0.92),
+        legend.text = element_text(size = 18, colour = "black", family = "Arial",vjust = 0.5, margin = unit(c(-0.2,0,-0.2,0),"cm")),
+        legend.title = element_text(size = 20, colour = "black", family = "Arial", face = "bold"),
+        legend.spacing = unit(0.2,"cm"),
+        #legend.position = c(0.85, 0.82),
+        legend.position = "right",
         legend.direction = "vertical",
-        legend.box = "horizontal",
+        legend.box = "vertical",
         legend.background = element_blank()
   )+
-  guides(shape=guide_legend(title = "Type",title.position = "top",order = 1, override.aes = list(shape=c(23,21),fill=c("grey50","grey50") )),
-         fill=guide_legend(title = "Day&temperature (°C)",title.position = "top",order = 2,
+  guides(shape=guide_legend(title = "Soil layer",title.position = "top",order = 1, override.aes = list(shape=c(24,21),fill=c("grey50","grey50") )),
+         col=guide_legend(title = "Temperature",title.position = "top",order = 2,
                            override.aes = list(shape=21,
-                                               fill=pal_time),nrow = 3, byrow = F))+
-  ggsave(filename("PCoA_all_time"),height = 25, width = 25, units = "cm", dpi = 300)
+                                               fill=c("Black","blue","green","red")),nrow = 4, byrow = T),
+         fill="none")+
+  ggsave(filename("PCoA_all_time"),height = 25, width = 32, units = "cm", dpi = 300)
 
-
-ggplot(ggpcoa, aes(x=V1,y=V2,shape=Type, fill=id))+
-  geom_point(size=7)+
-  scale_fill_manual(values = pal_temp)+
-  scale_shape_manual(values=c(24,21))+
-  scale_x_continuous(name = "PCoA1 (45.2%)",limits = c(-0.5,0.55),breaks = seq(-0.4,0.4,0.2))+
-  scale_y_continuous(name = "PCoA2 (32.2%)",limits = c(-0.35,0.45))+
-  theme_bw()+
-  theme(panel.grid = element_blank(),
-        panel.border = element_rect(size = 2),
-        axis.ticks = element_line(size = 1, color = "black"),
-        axis.ticks.length = unit(0.15, "cm"),
-        axis.text.x = element_text(size = 22, colour = "black",face = "bold", family = "Arial"),
-        axis.text.y = element_text(size = 22, colour = "black",face = "bold", family = "Arial"),
-        axis.title.x = element_text(size = 25, colour = "black",face = "bold", family = "Arial",margin = unit(c(0.5,0,0.0,0),"cm")),
-        axis.title.y = element_text(size = 25, colour = "black",face = "bold", family = "Arial",margin = unit(c(0.0,0.2,0.0,0.0),"cm")),
-        legend.text = element_text(size = 12, colour = "black", family = "Arial",vjust = 0.5, margin = unit(c(-0.2,0,-0.2,0),"cm")),
-        legend.title = element_text(size = 16, colour = "black", family = "Arial", face = "bold"),
-        legend.spacing = unit(1.4,"cm"),
-        legend.position = c(0.50, 0.92),
-        legend.direction = "vertical",
-        legend.box = "horizontal",
-        legend.background = element_blank()
-  )+
-  guides(shape=guide_legend(title = "Type",title.position = "top",order = 1, override.aes = list(shape=c(24,21),fill=c("grey50","grey50") )),
-         fill=guide_legend(title = "Day&temperature (°C)",title.position = "top",order = 2,
-                           override.aes = list(shape=21,
-                                               fill=pal_temp),nrow = 3, byrow = F))+
-  ggsave(filename("PCoA_all_temp"),height = 25, width = 25, units = "cm", dpi = 300)
-
-
-
-ggplot(ggpcoa, aes(x=V1,y=V2,shape=Type, col=Temp))+
-  geom_point(size=7)+
-  scale_shape_manual(values=c(18,16))+
-  scale_color_manual(values = c("black","blue","green","red"))+
-  scale_x_continuous(name = "PCoA1 (45.2%)",limits = c(-0.5,0.55),breaks = seq(-0.4,0.4,0.2))+
-  scale_y_continuous(name = "PCoA2",limits = c(-0.35,0.6))+
-  theme_bw()+
-  theme(panel.grid = element_blank(),
-        panel.border = element_rect(size = 2),
-        axis.ticks = element_line(size = 1, color = "black"),
-        axis.ticks.length = unit(0.15, "cm"),
-        axis.text.x = element_text(size = 22, colour = "black",face = "bold", family = "Arial"),
-        axis.text.y = element_text(size = 22, colour = "black",face = "bold", family = "Arial"),
-        axis.title.x = element_text(size = 25, colour = "black",face = "bold", family = "Arial",margin = unit(c(0.5,0,0.0,0),"cm")),
-        axis.title.y = element_text(size = 25, colour = "black",face = "bold", family = "Arial",margin = unit(c(0.0,0.2,0.0,0.0),"cm")),
-        legend.text = element_text(size = 12, colour = "black", family = "Arial",vjust = 0.5, margin = unit(c(-0.2,0,-0.2,0),"cm")),
-        legend.title = element_text(size = 16, colour = "black", family = "Arial", face = "bold"),
-        legend.spacing = unit(1.4,"cm"),
-        legend.position = c(0.50, 0.07),
-        legend.direction = "horizontal",
-        legend.box = "horizontal",
-        legend.background = element_blank()
-  )+
-  ggsave(filename("PCoA_temp"),height = 25, width = 25, units = "cm", dpi = 300)

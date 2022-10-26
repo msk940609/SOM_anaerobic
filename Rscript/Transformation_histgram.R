@@ -1,7 +1,8 @@
-
+library(lemon)
 library(dplyr)
 library(tidyr)
 library(data.table)
+source("Rscript/func_filename.R")
 
 
 lf=list.files(path = "Transformations per Peak/Dataset_Name/", pattern = ".csv")
@@ -24,42 +25,30 @@ table(dt$sample)
 dt
 
 
-trans_num=dt
+
+trans_num_all=fread("Datafile/Num.Peak.Trans_Allms.csv")
+trans_num_all$Type="All"
+
+trans_num_al=fread("Datafile/Num.Peak.Trans_ALms.csv")
+trans_num_al$Type="Active layer (AL)"
+
+trans_num_pf=fread("Datafile/Num.Peak.Trans_Sample_PFms.csv")
+trans_num_pf$Type="Permafrost (PF)"
 
 
-trans_num=trans_num %>% separate(sample, c("Sam","Type","Temp","Incubation"))
-trans_num$Sample=paste(trans_num$Type,trans_num$Temp,trans_num$Incubation, sep = "_")
+trans_num_all_merge=rbind(trans_num_all,trans_num_al,trans_num_pf)
+trans_num_all_merge$Type=factor(trans_num_all_merge$Type, levels = c("All","Active layer (AL)", 
+                                                                     "Permafrost (PF)"))
 
+trans_num_type=subset(trans_num_all_merge,trans_num_all_merge$Type!="All")
 
-trans_num2=trans_num
-trans_num2$Type="All"
-
-tt=subset(trans_num2,trans_num2$num.trans.involved.in<10)
-length(unique(tt$peak)) ##252
-
-length(unique(trans_num2$peak)) ##6947
-252/6947*100
- 
-trans_num3=rbind(trans_num,trans_num2)
-trans_num3$Type=factor(trans_num3$Type,levels = c("All","AL","PF"),
-                       labels = c("All","Active layer (AL)","Permafrost (PF)"))
-
-
-
-ggplot(trans_num3, aes(x=`num.trans.involved.in`))+
-  geom_histogram(binwidth = 3)+
-  facet_wrap(.~Type)+
-  theme_bw()+
-  theme(panel.grid = element_blank(),
-        strip.background = element_blank())+
-  xlab("Number of transformation")+
-  ylab("Counts")+
-  ggsave(filename("Histo_num_trans"),height = 10, width = 30, units = "cm", dpi = 300)
-
-
-ggplot(trans_num3, aes(x=`num.trans.involved.in`))+
-  geom_histogram(binwidth = 3)+
-  facet_grid(.~Type, scales = "free")+
+ggplot(trans_num_all_merge, aes(x=`num.trans.involved.in`))+
+  geom_histogram(binwidth = 1)+
+  geom_vline(xintercept = 6, lty=2, col="red")+
+  geom_vline(xintercept = 26, lty=2, col="red")+
+  #geom_vline(xintercept = 38, lty=2, col="red")+
+  facet_rep_grid(.~Type, scales = "free",repeat.tick.labels = T)+
+  scale_x_continuous(breaks = seq(0,110,20), limits = c(0,105))+
   theme_bw()+
   theme(panel.grid = element_blank(),
         strip.background = element_blank(),

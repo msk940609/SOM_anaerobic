@@ -6,7 +6,7 @@ library(tidyr)
 
 options(digits=10) # Sig figs in mass resolution data
 
-Sample_Name = "Dataset_Name" # This is a name that will be added to the output file (helps in tracking)
+Sample_Name = "PF" # This is a name that will be added to the output file (helps in tracking)
 
 #######################
 ### Loading in data ###
@@ -16,16 +16,17 @@ Sample_Name = "Dataset_Name" # This is a name that will be added to the output f
 # Loading in ICR data
 #data = read.csv(list.files(pattern = "*_Data_clean.csv"), row.names = 1) ##mass * sample dataset
 #data = read.csv(file = "Datafile/SOM_FTICR.csv", row.names = 1) ##mass * sample dataset
-data = read.csv(file = "Datafile/SOM_FTICR_sel.csv", row.names = 1) ##mass * sample dataset
+data = read.csv(file = "Datafile/SOM_FTICR_PF_merge.csv", row.names = 1) ##mass * sample dataset
+#data = read.csv(file = "Datafile/SOM_FTICR_PF_merge.csv", row.names = 1) ##mass * sample dataset
 
 
 # Keeping data and mol-data seperate to ensure they are unaltered
 #mol = read.csv(list.files(pattern = "*_Mol_clean.csv"), row.names = 1) ##mass * chemical information dataset
-mol = read.csv(file = "Datafile/SOM_chp_sel.csv", row.names = 1) ##mass * chemical information dataset
+mol = read.csv(file = "Datafile/SOM_chp_PF.csv", row.names = 1) ##mass * chemical information dataset
 colnames(data) = paste("Sample_", colnames(data), sep="")
 
 # Loading in transformations
-trans.full =  read.csv("Datafile/Transformation_Database_ms.csv")
+trans.full =  read.csv("Datafile/Transformation_Database_07-2020.csv")
 trans.full$Name = as.character(trans.full$Name)
 
 # ############# #
@@ -66,7 +67,7 @@ if(!dir.exists("Transformations per Peak")){
 samples.to.process = colnames(data)
 
 # error term
-error.term = 0.000001
+error.term = 0.000000
 
 # matrix to hold total number of transformations for each sample
 tot.trans = numeric()

@@ -26,8 +26,23 @@ loadfonts(device="win")
 ##Data analysis=====
 som_1st=fread("Datafile/SOM_1st.csv")
 
+som_1st$Freq=1
+
+som_1st
+
+som_fm=aggregate(som_1st$Freq, by=list(Type=som_1st$Type,Incubation=som_1st$Incubation, Temp=som_1st$Temp, Formula=som_1st$Formula),sum)
+som_fm
+
+
+som_1st=som_1st %>% inner_join(som_fm)
+length(unique(som_1st$Formula))
+som_1st_sel=subset(som_1st,som_1st$x>1)
+length(unique(som_1st_sel$Formula))
+
+table(som_1st$Sample)
 #Molecular class====
 ft_data=som_1st
+#ft_data=som_1st_sel
 ft_data$lipid=ifelse(ft_data$`O/C`>=0&ft_data$`O/C`<0.3,
                      ifelse(ft_data$`H/C`>1.5&ft_data$`H/C`<2.0, "Lipids",""),"")
 ft_data$protein=ifelse(ft_data$`O/C`>=0.3&ft_data$`O/C`<=0.67,
@@ -161,7 +176,7 @@ ggplot(mole_som_m_sel2, aes(x=Incubation,y=value,fill=Molecularclass))+
         panel.border = element_rect(size = 1.5,colour = "black"),
         axis.line.y.right = element_line(size = 1, color = "black"),
         axis.line.x.top =  element_line(colour = "black"),
-        axis.text.x = element_text(size = 14,colour = "black",face = 2, angle = 0, hjust = 0.5,vjust = 1.0,
+        axis.text.x = element_text(size = 16,colour = "black",face = 2, angle = 0, hjust = 0.5,vjust = 1.0,
                                    margin = unit(c(0.02,0.2,0.6,0.2),"cm")),
         axis.ticks.x = element_blank(),
         axis.ticks.length.y = unit(0.15,"cm"),
@@ -172,7 +187,7 @@ ggplot(mole_som_m_sel2, aes(x=Incubation,y=value,fill=Molecularclass))+
         strip.text.x = element_text(size = 16, colour = "black",face = 2,margin = unit(c(0.02,0.2,0.1,0.2),"cm")),
         strip.text.y = element_blank(),
         #legend.margin = unit(c(0.0,0.0,0.0,0.0),"cm"),
-        legend.title = element_text(size = 20, colour = "black",margin = unit(c(0.0,0.2,0.0,0.2),"cm")),
+        legend.title = element_text(size = 20, colour = "black",margin = unit(c(0.0,0.2,0.0,0.2),"cm"), face = 2),
         legend.text = element_text(size = 18, colour = "black",margin = unit(c(0.2,0.2,0.2,0.0),"cm")),
         legend.key.width = unit(1.0,"cm"),
         legend.key.height = unit(1.0,"cm"),
@@ -181,7 +196,7 @@ ggplot(mole_som_m_sel2, aes(x=Incubation,y=value,fill=Molecularclass))+
         legend.justification=c(0.4, 0.5),
         legend.position = "bottom")+
   guides(fill=guide_legend(title = "Molecular classes",nrow = 2))+
-  ggsave(filename("Mole_bar"),height = 32, width = 40, units = "cm", dpi = 300)
+  ggsave(filename("Mole_bar"),height = 30, width = 40, units = "cm", dpi = 300)
 
 mole_som$Molecularclass=factor(mole_som$Molecularclass, 
                                  levels = c("Lignins","Tannins","Unsaturated hydrocarbons","Condensed aromatics",
@@ -353,7 +368,7 @@ ggplot(comp_som_m_sel2, aes(x=Incubation,y=value,fill=Comp))+
         panel.border = element_rect(size = 1.5,colour = "black"),
         axis.line.y.right = element_line(size = 1, color = "black"),
         axis.line.x.top =  element_line(colour = "black"),
-        axis.text.x = element_text(size = 14,colour = "black",face = 2, angle = 0, hjust = 0.5,vjust = 1.0,
+        axis.text.x = element_text(size = 16,colour = "black",face = 2, angle = 0, hjust = 0.5,vjust = 1.0,
                                    margin = unit(c(0.02,0.2,0.2,0.2),"cm")),
         axis.ticks.x = element_blank(),
         axis.ticks.length.y = unit(0.15,"cm"),
@@ -365,7 +380,7 @@ ggplot(comp_som_m_sel2, aes(x=Incubation,y=value,fill=Comp))+
         strip.text.y = element_blank(),
         #legend.margin = unit(c(0.0,0.0,0.0,0.0),"cm"),
         legend.title = element_text(size = 16,face=2, colour = "black",margin = unit(c(0.0,0.2,0.0,0.2),"cm")),
-        legend.text = element_text(size = 14,face=2, colour = "black",margin = unit(c(0.2,0.2,0.2,0.0),"cm")),
+        legend.text = element_text(size = 14,face=1, colour = "black",margin = unit(c(0.2,0.2,0.2,0.0),"cm")),
         legend.key.width = unit(0.8,"cm"),
         legend.key.height = unit(0.8,"cm"),
         legend.background = element_blank(),
@@ -373,7 +388,7 @@ ggplot(comp_som_m_sel2, aes(x=Incubation,y=value,fill=Comp))+
         legend.justification=c(0.5, 0.5),
         legend.position = "bottom")+
   guides(fill=guide_legend(title = "Chemical composition"))+
-ggsave(filename("Chemicalcomposition_bar"),height = 34, width = 40, units = "cm", dpi = 300)
+ggsave(filename("Chemicalcomposition_bar"),height = 29, width = 40, units = "cm", dpi = 300)
 
 comp_som$Comp=factor(comp_som$Comp,levels = c("CHO","CHON","CHOS","CHONS","Remainders"))
 
@@ -570,6 +585,86 @@ ggplot(som_chp, aes(x=Incubation,y=value,fill=Temp))+
         legend.position = "right")+
   guides(fill=guide_legend(title = "Temperature"))+
   ggsave(filename("chp_dis2"),height = 27, width = 60, units = "cm", dpi = 300)
+
+
+
+
+som_chp
+
+som_chp_m=dcast(som_chp, Type+Incubation+Temp~variable, mean) %>% melt(id.vars=c("Type","Incubation","Temp")) %>% 
+  `colnames<-`(c("Type","Incubation","Temp","variable","Mean"))
+
+som_chp_sd=dcast(som_chp, Type+Incubation+Temp~variable, sd) %>% melt(id.vars=c("Type","Incubation","Temp")) %>% 
+  `colnames<-`(c("Type","Incubation","Temp","variable","SD"))
+som_chp_m
+som_chp_sd
+
+som_chp_m=som_chp_m %>% inner_join(som_chp_sd)
+som_chp_m$Incubationlab=as.numeric(som_chp_m$Incubation)
+
+som_chp_m_ctrl5=subset(som_chp_m,som_chp_m$Temp=="Before incubation")
+som_chp_m_ctrl5$Temp="5°C"
+
+som_chp_m_ctrl15=subset(som_chp_m,som_chp_m$Temp=="Before incubation")
+som_chp_m_ctrl15$Temp="15°C"
+som_chp_m_ctrl25=subset(som_chp_m,som_chp_m$Temp=="Before incubation")
+som_chp_m_ctrl25$Temp="25°C"
+
+
+som_chp_m_temp=subset(som_chp_m,som_chp_m$Temp!="Before incubation") %>% droplevels()
+
+som_chp_m_fin=rbind(som_chp_m_ctrl5,som_chp_m_ctrl15,som_chp_m_ctrl25,som_chp_m_temp)
+
+scaleFUN <- function(x) sprintf("%.2f", x)
+
+
+gg <- ggplot(som_chp_m_fin, aes(x=Incubation,y=Mean,fill=Temp))+
+  geom_errorbar(data = som_chp_m_fin, aes(x=Incubation,ymin=Mean-SD,ymax=Mean+SD,fill=Temp), width=0.2)+
+  geom_point(data = som_chp_m_fin, aes(x=Incubation,y=Mean,col=Temp,fill=Temp), size=3)+
+  geom_smooth(data = som_chp_m_fin, aes(x=Incubationlab,y=Mean,col=Temp), method = "loess", size=1.5,se=FALSE)+
+  geom_vline(xintercept = 1.5, lty=2)+
+  geom_vline(xintercept = 2.5, lty=2)+
+  geom_vline(xintercept = 3.5, lty=2)+
+  geom_vline(xintercept = 4.5, lty=2)+
+  scale_x_discrete(name="Incubation Days")+
+  scale_y_continuous(labels=scaleFUN)+
+  #scale_fill_manual(values = c("#374E55FF","#DF8F44FF","#00A1D5FF","#CD534CFF","#5F559BFF","#79AF97FF","#4A6990FF","grey70"))+
+  scale_color_manual(values = c("#145DA0","#478C5C","#DF362D"))+
+  scale_fill_manual(values = c("#145DA0","#478C5C","#DF362D"))+
+  facet_wrap(Type+variable~., scales = "free", ncol=4)+
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        plot.title = element_blank(),
+        plot.margin = unit(c(0.2,0.2,0.2,0.2),"cm"),
+        panel.border = element_rect(size = 1.5,colour = "black"),
+        axis.line.y.right = element_line(size = 1, color = "black"),
+        axis.line.x.top =  element_line(colour = "black"),
+        axis.text.x = element_text(size = 18,colour = "black",face = 2, angle = 0, hjust = 0.5,vjust = 1.0,
+                                   margin = unit(c(0.2,0.2,0.4,0.2),"cm")),
+        axis.ticks.x = element_blank(),
+        axis.ticks.length.y = unit(0.15,"cm"),
+        axis.ticks = element_line(size = 1),
+        axis.text.y = element_text(size = 18, colour = "black",face=2 ),
+        axis.title.x = element_text(size = 18,face=2, colour = "black",margin = unit(c(0.0,0.0,0.0,0.0),"cm")),
+        axis.title.y = element_text(size = 0, colour = "black",margin = unit(c(0.0,0.2,0.0,0.2),"cm")),
+        strip.background = element_rect(fill = NA, colour = NA),
+        strip.text.x = element_text(size = 16, colour = "black",face = 2,margin = unit(c(0.2,0.2,0.4,0.2),"cm")),
+        strip.text.y = element_blank(),
+        #legend.margin = unit(c(0.0,0.0,0.0,0.0),"cm"),
+        legend.title = element_text(size = 20, colour = "black",margin = unit(c(0.0,0.2,0.0,0.2),"cm")),
+        legend.text = element_text(size = 18, hjust = 0,colour = "black",margin = unit(c(0.2,0.2,0.2,0.0),"cm")),
+        legend.key.width = unit(1.5,"cm"),
+        legend.key.height = unit(1.0,"cm"),
+        legend.direction = "vertical",
+        legend.justification=c(0.5, 0.5),
+        legend.position = "right")+
+  guides(colour=guide_legend(title = "Temperature", override.aes = list(size=1.5)),
+         fill="none")+
+  ggsave(filename("chp_dis3"),height = 27, width = 60, units = "cm", dpi = 300)
+
+
+
+
 
 
 som_chp_sel=subset(som_chp,som_chp$Temp!="Ctrl") %>% droplevels()
